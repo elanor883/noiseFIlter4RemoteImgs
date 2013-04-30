@@ -23,23 +23,25 @@ Mat tresholding(Mat base, int tresh);
 int otsu(Mat base);
 QImage Mat2QImage(const cv::Mat3b &src);
 static QImage IplImage2QImage(const IplImage *iplImage);
-
+int *sort_desc(int mask[], int size);
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
- /*   zoomInBtn = ui->pushButton;
+    kernelSize = 0;
+    kernelType = 0;
+    /*   zoomInBtn = ui->pushButton;
     zoomOutBtn = ui->pushButton_2;
     moveBtn = ui->pushButton_3;
     applyFilter = ui->pushButton_4;
     saveImg = ui->pushButton_5;*/
 
-   // ui->scrollAreaIn->setHorizontalScrollBar(ui->horizontalScrollBar);
+    // ui->scrollAreaIn->setHorizontalScrollBar(ui->horizontalScrollBar);
     //ui->scrollAreaIn->horizontalScrollBar()->setValue(100);
- //   QSizePolicy sizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-   // sizePolicy.setHorizontalStretch(2000);
+    //   QSizePolicy sizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    // sizePolicy.setHorizontalStretch(2000);
     //sizePolicy.setVerticalStretch(0200);
     //ui->scrollAreaIn->setSizePolicy(sizePolicy);
     //ui->scrollAreaIn->scrollBarWidgets(Qt::AlignRight);
@@ -52,20 +54,141 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     QMenu *file = ui->menuFile;
- //   file = menuBar()->addMenu("&File");
-  //  file = ui->menubar->addMenu("&file");
+    //   file = menuBar()->addMenu("&File");
+    //  file = ui->menubar->addMenu("&file");
     file->addAction(openFile);
     file->addAction(quit);
 
-
+    connect(ui->applyFilterBtn, SIGNAL(clicked()), this, SLOT(applyFilter()));
     connect(quit, SIGNAL(triggered()), qApp, SLOT(quit()));
     connect(openFile, SIGNAL(triggered()), this, SLOT(open()));
     connect(ui->zoomInBtn, SIGNAL(clicked()), this, SLOT(zoomIn()));
-    connect(ui->zoomOutBtn, SIGNAL(clicked()), this, SLOT(zoomOut()));
+    connect(ui->zoomOutBtn, SIGNAL(clicked()), this, SLOT(applyFilter()));
+    //  connect(ui->comboFilter, SIGNAL(ui->comboFilter->currentIndexChanged(int)),this,SLOT(handleSelectionChanged(int)));
+    //};
+
+
+    //connect(ui->comboFilter, SIGNAL(highlighted(int)), this, SLOT(applyFilter));
     //new QPushButton(this);
     //zoomInBtn = ui->pushButton;
 
 }
+
+void MainWindow::handleSelectionChanged(int index){
+    cout  << "szar";
+    QMessageBox* msg = new QMessageBox();
+    msg->setWindowTitle("Hello !");
+    msg->setText("Selected Index is :"+QString::number(index));
+    msg->show();
+}
+void MainWindow::applyFilter()
+{
+    //std::string utf8_text = qs.toUtf8().constData();
+
+    // or this if you on Windows :-)
+    //std::string current_locale_text = qs.toLocal8Bit().constData();
+
+    cout << "applyFilter, combobox text: " << ui->comboFilter->currentIndex() << "\n";
+    if(ui->comboSize->currentIndex() == 0)
+    {
+        kernelSize=3;
+        cout << "kernel merete: 3 x 3";
+    }
+    else if(ui->comboSize->currentIndex() == 1)
+    {
+        kernelSize=5;
+        cout << "kernel merete: 5 x 5 ";
+    }
+    else if (ui->comboSize->currentIndex() == 2)
+    {
+        kernelSize=7;
+        cout << "kernel merete: 7 x 7 ";
+    }
+    else if (ui->comboSize->currentIndex() == 3)
+    {
+        kernelSize=9;
+        cout << "kernel merete: 9 x 9 ";
+    }
+
+    if(ui->comboFilter->currentIndex() == 0)
+    {
+        cout << "kernel: median";
+        kernelType = 0;
+        median(img, kernelSize);
+    }
+    else if(ui->comboFilter->currentIndex() == 1)
+    {
+        kernelType = 1;
+        cout << "kernel: avarage ";
+    }
+    else if (ui->comboFilter->currentIndex() == 2)
+    {
+        kernelType = 2;
+        cout << "kernel: low-pass ";
+    }
+    else if (ui->comboFilter->currentIndex() == 3)
+    {
+        kernelType = 3;
+        cout << "kernel: gauss";
+    }
+}
+void MainWindow::median(Mat image, int size){
+    cout << "median filter fv";
+    int offset = size/2;
+    int mask[size*size];
+    Size size_img = image.size();
+    int width = size_img.width;
+    int height = size_img.height;
+
+    Mat output = Mat(height, width, CV_8UC1);
+cout<< "median st" ;
+    for(int i= offset; i< image.cols-offset; ++i)
+    {
+        for(int j = offset; j< image.rows-offset; ++j)
+        {
+            //field[0] = image.at<uchar>(i-1, j-1);
+            //calc_mask(mask, size, i, j, img);
+            for(int k=-1*size/2; k<=size/2; ++k)
+            {
+                for(int l = -1*size/2; l<=size/2; ++l)
+                {
+                    mask[k*size+l] = image.at<uchar>(i+l, j+k);
+                }
+            }
+            sort_desc(mask, size);
+            output.at<uchar>(i, j) = mask[size/2+1];
+        }
+    }
+    cout<< "median finished" ;
+
+    IplImage im = output;
+    cout<< "display start" ;
+    QImage result = IplImage2QImage(&im);
+cout<< "display start" ;
+    //imshow("Otsu" , res);
+    //ui->imageLabelOut->setScaledContents(true);
+    ui->imageLabelOut->setPixmap(QPixmap::fromImage(result));
+    ui->imageLabelOut->setMargin(40);
+}
+
+int* sort_desc(int mask[], int size)
+{
+    for(int j = 0; j < size - 1; j++)
+    {
+        for (int k = j + 1; k < size; k++)
+        {
+            if(mask[j] < mask[k])
+            {
+                int temp = mask[j];
+                mask[j] = mask[k];
+                mask[k] = temp;
+            }
+        }
+    }
+    return mask;
+
+}
+
 
 void MainWindow::open(){
     QString fileName = QFileDialog::getOpenFileName(this,
@@ -84,47 +207,50 @@ void MainWindow::open(){
         scaleFactor = 1.0;
 
         //printAct->setEnabled(true);
-       // fitToWindowAct->setEnabled(true);
+        // fitToWindowAct->setEnabled(true);
         //updateActions();
 
         //if (!fitToWindowAct->isChecked())
-          //  imageLabelIn->adjustSize();
+        //  imageLabelIn->adjustSize();
 
         string fname = fileName.toUtf8().constData();
-        Mat img = imread(fname, CV_LOAD_IMAGE_GRAYSCALE);
-            if(img.empty())
-            {
-                //return -1;
-            }
+        img = imread(fname, CV_LOAD_IMAGE_GRAYSCALE);
+        if(img.empty())
+        {
+            //return -1;
+        }
 
 
 
-           // imshow("Original", img);
-           // imshow("Otsu" , tresholding(img,otsu(img)));
-            Mat res = tresholding(img,otsu(img));
-           //QImage result = Mat2QImage(res);
-            IplImage im = res;
-            QImage result = IplImage2QImage(&im);
+  /*      // imshow("Original", img);
+        // imshow("Otsu" , tresholding(img,otsu(img)));
+        Mat res = tresholding(img,otsu(img));
+        //QImage result = Mat2QImage(res);
+        IplImage im = res;
+        QImage result = IplImage2QImage(&im);
 
-             //imshow("Otsu" , res);
-            ui->imageLabelOut->setScaledContents(true);
-            ui->imageLabelOut->setPixmap(QPixmap::fromImage(result));
-            ui->imageLabelOut->setMargin(40);
-            scaleFactor = 1.0;
+        //imshow("Otsu" , res);
+        ui->imageLabelOut->setScaledContents(true);
+        ui->imageLabelOut->setPixmap(QPixmap::fromImage(result));
+        ui->imageLabelOut->setMargin(40);
+        scaleFactor = 1.0;
 
-            //return 0;
+        //return 0;*/
 
     }
 }
 
 void MainWindow::zoomIn()
 {
-    scaleImage(1.25);
+    cout << "scaleeee" ;
+    //scaleImage(1.25);
+
 }
 
 void MainWindow::zoomOut()
 {
-    scaleImage(0.8);
+    cout << "scaleeee" ;
+    //scaleImage(0.8);
 }
 
 void MainWindow::scaleImage(double factor)
@@ -144,10 +270,10 @@ void MainWindow::scaleImage(double factor)
 }
 
 void MainWindow::adjustScrollBar(QScrollBar *scrollBar, double factor)
- {
+{
     scrollBar->setValue(int(factor * scrollBar->value()
-                                 + ((factor - 1) * scrollBar->pageStep()/2)));
- }
+                            + ((factor - 1) * scrollBar->pageStep()/2)));
+}
 
 MainWindow::~MainWindow()
 {
@@ -244,15 +370,15 @@ int otsu(Mat base)
 }
 
 QImage Mat2QImage(const cv::Mat3b &src) {
-        QImage dest(src.cols, src.rows, QImage::Format_RGB888);
-        for (int y = 0; y < src.rows; ++y) {
-                const cv::Vec3b *srcrow = src[y];
-                QRgb *destrow = (QRgb*)dest.scanLine(y);
-                for (int x = 0; x < src.cols; ++x) {
-                        destrow[x] = qRgba(srcrow[x][2], srcrow[x][1], srcrow[x][0], 255);
-                }
+    QImage dest(src.cols, src.rows, QImage::Format_RGB888);
+    for (int y = 0; y < src.rows; ++y) {
+        const cv::Vec3b *srcrow = src[y];
+        QRgb *destrow = (QRgb*)dest.scanLine(y);
+        for (int x = 0; x < src.cols; ++x) {
+            destrow[x] = qRgba(srcrow[x][2], srcrow[x][1], srcrow[x][0], 255);
         }
-        return dest;
+    }
+    return dest;
 }
 
 static QImage IplImage2QImage(const IplImage *iplImage)
@@ -262,18 +388,18 @@ static QImage IplImage2QImage(const IplImage *iplImage)
 
     if  (iplImage->depth == IPL_DEPTH_8U && iplImage->nChannels == 3)
     {
-      const uchar *qImageBuffer = (const uchar*)iplImage->imageData;
-      QImage img(qImageBuffer, width, height, QImage::Format_RGB888);
-      return img.rgbSwapped();
+        const uchar *qImageBuffer = (const uchar*)iplImage->imageData;
+        QImage img(qImageBuffer, width, height, QImage::Format_RGB888);
+        return img.rgbSwapped();
     } else if  (iplImage->depth == IPL_DEPTH_8U && iplImage->nChannels == 1){
-    const uchar *qImageBuffer = (const uchar*)iplImage->imageData;
-    QImage img(qImageBuffer, width, height, QImage::Format_Indexed8);
+        const uchar *qImageBuffer = (const uchar*)iplImage->imageData;
+        QImage img(qImageBuffer, width, height, QImage::Format_Indexed8);
 
-    QVector<QRgb> colorTable;
-    for (int i = 0; i < 256; i++){
-        colorTable.push_back(qRgb(i, i, i));
-    }
-    img.setColorTable(colorTable);
-    return img;
+        QVector<QRgb> colorTable;
+        for (int i = 0; i < 256; i++){
+            colorTable.push_back(qRgb(i, i, i));
+        }
+        img.setColorTable(colorTable);
+        return img;
     }
 }

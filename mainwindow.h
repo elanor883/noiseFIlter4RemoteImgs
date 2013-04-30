@@ -4,6 +4,11 @@
 #include <QMainWindow>
 #include <QPushButton>
 #include <QScrollBar>
+#include <opencv2/highgui/highgui.hpp>
+#include <iostream>
+#include <cmath>
+#include <numeric>
+#include <math.h>
 
 namespace Ui {
 class MainWindow;
@@ -21,12 +26,19 @@ private slots:
     void open();
     void zoomIn();
     void zoomOut();
+    void median(cv::Mat image, int size);
+    void applyFilter();
     void scaleImage(double factor);
+    void handleSelectionChanged(int);
     void adjustScrollBar(QScrollBar *scrollBar, double factor);
+
 
 private:
     Ui::MainWindow *ui;
     double scaleFactor;
+    int kernelSize;
+    int kernelType;
+    cv::Mat img;
 
 };
 

@@ -82,8 +82,8 @@
       <rect>
        <x>0</x>
        <y>0</y>
-       <width>362</width>
-       <height>292</height>
+       <width>366</width>
+       <height>296</height>
       </rect>
      </property>
      <widget class="QLabel" name="imageLabelIn">
@@ -105,7 +105,7 @@
        <bool>true</bool>
       </property>
       <property name="text">
-       <string>TextLabel</string>
+       <string/>
       </property>
       <property name="scaledContents">
        <bool>true</bool>
@@ -130,8 +130,8 @@
       <rect>
        <x>0</x>
        <y>0</y>
-       <width>377</width>
-       <height>307</height>
+       <width>379</width>
+       <height>309</height>
       </rect>
      </property>
      <widget class="QLabel" name="imageLabelOut">
@@ -144,7 +144,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>TextLabel</string>
+       <string/>
       </property>
      </widget>
     </widget>
@@ -268,7 +268,7 @@
      <x>0</x>
      <y>0</y>
      <width>858</width>
-     <height>23</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
