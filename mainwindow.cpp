@@ -119,6 +119,7 @@ void MainWindow::applyFilter()
     else if(ui->comboFilter->currentIndex() == 1)
     {
         kernelType = 1;
+        avarage(img, kernelSize);
         cout << "kernel: avarage ";
     }
     else if (ui->comboFilter->currentIndex() == 2)
@@ -139,10 +140,10 @@ void MainWindow::median(Mat image, int size){
     Size size_img = image.size();
     int width = size_img.width;
     int height = size_img.height;
-
+    cout << "csatornak: " << image.depth();
     Mat output = Mat(height, width, CV_8UC1);
-cout<< "median st" ;
-    for(int i= offset; i< image.cols-offset; ++i)
+    cout<< "median st" ;
+   /* for(int i= offset; i< image.cols-offset; ++i)
     {
         for(int j = offset; j< image.rows-offset; ++j)
         {
@@ -160,13 +161,34 @@ cout<< "median st" ;
         }
     }
     cout<< "median finished" ;
+*/
+
+
+    for (int ind = 0; ind< 10; ++ ind){
+    for(int i= 0; i< height-offset; i++)
+    {
+        for(int j = 0; j< width-offset; j++)
+        {
+            int t =0;
+            for(int k = 0; k < size; ++k)
+            {
+                for(int l = 0; l < size; ++l)
+                {
+                    mask[k*size+l] = image.at<uchar>(i+l, j+k);
+                }
+            }
+sort_desc(mask, size);
+            output.at<uchar>(i+offset, j+offset) = mask[size/2+1];
+        }
+    }
+    }
 
     IplImage im = output;
     cout<< "display start" ;
     QImage result = IplImage2QImage(&im);
-cout<< "display start" ;
+    cout<< "display start" ;
     //imshow("Otsu" , res);
-    //ui->imageLabelOut->setScaledContents(true);
+    // ui->imageLabelOut->setScaledContents(true);
     ui->imageLabelOut->setPixmap(QPixmap::fromImage(result));
     ui->imageLabelOut->setMargin(40);
 }
@@ -189,6 +211,50 @@ int* sort_desc(int mask[], int size)
 
 }
 
+void MainWindow::avarage(Mat image, int size){
+    cout << "median filter fv";
+    int offset = (size-1)/2;
+    int mask[size*size];
+    Size size_img = image.size();
+    int width = size_img.width;
+    int height = size_img.height;
+    int sum;
+    //cout << "csatornak: " << image.depth();
+    Mat output = Mat(height, width, CV_8UC1);
+    //cout <<
+    for (int ind = 0; ind< 10; ++ ind){
+    for(int i= 0; i< height-offset; i++)
+    {
+        for(int j = 0; j< width-offset; j++)
+        {
+            sum = 0;
+            int t =0;
+            for(int k = 0; k < size; ++k)
+            {
+                for(int l = 0; l < size; ++l)
+                {
+                    mask[k*size+l] = image.at<uchar>(i+l, j+k);
+                    sum = sum + mask[k*size+l] ;
+                }
+            }
+
+            output.at<uchar>(i+offset, j+offset) = sum/(size*size);
+        }
+    }
+    }
+
+
+   IplImage im = output;
+    cout<< "display start" ;
+    QImage result = IplImage2QImage(&im);
+    cout<< "display start" ;
+    //imshow("Otsu" , res);
+    ui->imageLabelOut->setScaledContents(true);
+    ui->imageLabelOut->setPixmap(QPixmap::fromImage(result));
+    ui->imageLabelOut->setMargin(40);
+
+
+}
 
 void MainWindow::open(){
     QString fileName = QFileDialog::getOpenFileName(this,
@@ -222,7 +288,7 @@ void MainWindow::open(){
 
 
 
-  /*      // imshow("Original", img);
+        /*      // imshow("Original", img);
         // imshow("Otsu" , tresholding(img,otsu(img)));
         Mat res = tresholding(img,otsu(img));
         //QImage result = Mat2QImage(res);

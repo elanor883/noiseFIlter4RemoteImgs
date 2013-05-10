@@ -27,6 +27,7 @@ private slots:
     void zoomIn();
     void zoomOut();
     void median(cv::Mat image, int size);
+    void avarage(cv::Mat image, int size);
     void applyFilter();
     void scaleImage(double factor);
     void handleSelectionChanged(int);
