@@ -12,8 +12,8 @@ class Filter {
 
 public:
     static void median(cv::Mat input, int size, cv::Mat* result);
-    static void sort_desc(int mask[], int size);
     static void avarage(cv::Mat image, int size, cv::Mat* result);
+    static void low_pass(cv::Mat image, int size, cv::Mat *result);
     static cv::Mat tresholding(cv::Mat base, int tresh);
     static int otsu(cv::Mat base);
 };
