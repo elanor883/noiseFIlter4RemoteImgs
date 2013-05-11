@@ -111,7 +111,7 @@ void MainWindow::applyFilter()
         cout << "kernel merete: 9 x 9 ";
     }
 
-    if(ui->comboFilter->currentIndex() == 0)
+   /* if(ui->comboFilter->currentIndex() == 0)
     {
         cout << "kernel: median";
         Filter::median(img,kernelSize, output);
@@ -128,12 +128,27 @@ void MainWindow::applyFilter()
     else if (ui->comboFilter->currentIndex() == 2)
     {
         kernelType = 2;
+        Filter::low_pass(img,kernelSize,output);
         cout << "kernel: low-pass ";
     }
     else if (ui->comboFilter->currentIndex() == 3)
     {
         kernelType = 3;
         cout << "kernel: gauss";
+    }*/
+
+    switch (ui->comboFilter->currentIndex())
+    {
+    case 0: Filter::median(img,kernelSize, output);
+        break;
+    case 1: Filter::avarage(img, kernelSize, output);
+        break;
+    case 2: Filter::low_pass(img, kernelSize, output);
+        break;
+    case 3: cout << "gauss";
+        break;
+    default: Filter::median(img,kernelSize, output);
+        break;
     }
 
     display(output);
