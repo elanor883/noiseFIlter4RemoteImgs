@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "low_pass_dialog.h"
+#include "gauss_parameter.h"
 #include "../filter/filter.h"
 #include <QAction>
 #include <QMenu>
@@ -9,6 +11,7 @@
 #include <QImage>
 #include <QFileDialog>
 #include <QDir>
+#include <QDialog>
 #include <QSizePolicy>
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
@@ -31,30 +34,15 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     kernelSize = 0;
     kernelType = 0;
-    /*   zoomInBtn = ui->pushButton;
-    zoomOutBtn = ui->pushButton_2;
-    moveBtn = ui->pushButton_3;
-    applyFilter = ui->pushButton_4;
-    saveImg = ui->pushButton_5;*/
 
-    // ui->scrollAreaIn->setHorizontalScrollBar(ui->horizontalScrollBar);
-    //ui->scrollAreaIn->horizontalScrollBar()->setValue(100);
-    //   QSizePolicy sizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    // sizePolicy.setHorizontalStretch(2000);
-    //sizePolicy.setVerticalStretch(0200);
-    //ui->scrollAreaIn->setSizePolicy(sizePolicy);
-    //ui->scrollAreaIn->scrollBarWidgets(Qt::AlignRight);
-    //ui->scrollAreaIn->addScrollBarWidget(ui->horizontalScrollBar,Qt::AlignCenter);
+    setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::Dialog);
 
     QAction *openFile = ui->actionOpen;
     QAction *quit = ui->actionQuit;
-    //ui->scrollAreaIn->horizontalScrollBar()->mouseMoveEvent();
-    //ui->scrollAreaWidgetContents->scroll(300,300, QRect(500,500,60,60));
+
 
 
     QMenu *file = ui->menuFile;
-    //   file = menuBar()->addMenu("&File");
-    //  file = ui->menubar->addMenu("&file");
     file->addAction(openFile);
     file->addAction(quit);
 
@@ -63,18 +51,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(openFile, SIGNAL(triggered()), this, SLOT(open()));
     connect(ui->zoomInBtn, SIGNAL(clicked()), this, SLOT(zoomIn()));
     connect(ui->zoomOutBtn, SIGNAL(clicked()), this, SLOT(applyFilter()));
-    //  connect(ui->comboFilter, SIGNAL(ui->comboFilter->currentIndexChanged(int)),this,SLOT(handleSelectionChanged(int)));
-    //};
-
-
-    //connect(ui->comboFilter, SIGNAL(highlighted(int)), this, SLOT(applyFilter));
-    //new QPushButton(this);
-    //zoomInBtn = ui->pushButton;
 
 }
 
 void MainWindow::handleSelectionChanged(int index){
-    cout  << "szar";
+
     QMessageBox* msg = new QMessageBox();
     msg->setWindowTitle("Hello !");
     msg->setText("Selected Index is :"+QString::number(index));
@@ -111,31 +92,8 @@ void MainWindow::applyFilter()
         cout << "kernel merete: 9 x 9 ";
     }
 
-   /* if(ui->comboFilter->currentIndex() == 0)
-    {
-        cout << "kernel: median";
-        Filter::median(img,kernelSize, output);
 
-        kernelType = 0;
 
-    }
-    else if(ui->comboFilter->currentIndex() == 1)
-    {
-        kernelType = 1;
-        Filter::avarage(img, kernelSize, output);
-        cout << "kernel: avarage ";
-    }
-    else if (ui->comboFilter->currentIndex() == 2)
-    {
-        kernelType = 2;
-        Filter::low_pass(img,kernelSize,output);
-        cout << "kernel: low-pass ";
-    }
-    else if (ui->comboFilter->currentIndex() == 3)
-    {
-        kernelType = 3;
-        cout << "kernel: gauss";
-    }*/
 
     switch (ui->comboFilter->currentIndex())
     {
@@ -143,10 +101,31 @@ void MainWindow::applyFilter()
         break;
     case 1: Filter::avarage(img, kernelSize, output);
         break;
-    case 2: Filter::low_pass(img, kernelSize, output);
+    case 2:
+    {
+        low_pass_dialog* lp = new low_pass_dialog(this);
+        lp->exec();
+        if(lp->ok_pushed() == 1)
+        {
+            Filter::low_pass(img,kernelSize, output, lp->get_parameter());
+        }
+
+
         break;
-    case 3: cout << "gauss";
+    }
         break;
+    case 3:
+    {
+        gauss_parameter* gp = new gauss_parameter(this);
+        gp->exec();
+        if(gp->ok_pushed() == 1)
+        {
+            Filter::gauss_filter(img,kernelSize, output, gp->get_parameter());
+        }
+
+
+        break;
+    }
     default: Filter::median(img,kernelSize, output);
         break;
     }
