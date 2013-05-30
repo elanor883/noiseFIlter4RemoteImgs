@@ -35,6 +35,7 @@ void Filter::median(cv::Mat image, int size, Mat *result){
                 {
                     for(int l = 0; l < size; ++l)
                     {
+
                         mask[k*size+l] = image.at<uchar>(i+l, j+k);
                     }
                 }
@@ -110,6 +111,45 @@ static void dft(double inreal[], double inimag[], double outreal[], double outim
     }
 }*/
 
+void Filter::gauss_filter(cv::Mat image, int size, Mat *result, int sigma){
+    cout << "gaussian filter fv";
+    int offset = (size-1)/2;
+    int half = offset+1;
+    int mask[size*size];
+    Size size_img = image.size();
+    int width = size_img.width;
+    int height = size_img.height;
+    int sum;
+    //cout << "csatornak: " << image.depth();
+    Mat output = Mat(height, width, CV_8UC1);
+
+    //cout <<
+    for (int ind = 0; ind< 1; ++ ind){
+        for(int i= 0; i< height-offset; i++)
+        {
+            for(int j = 0; j< width-offset; j++)
+            {
+                sum = 0;
+                for(int k = 0; k < size; ++k)
+                {
+                    for(int l = 0; l < size; ++l)
+                    {
+                        int fx = abs(half-k);
+                        int fy = abs(half-l);
+
+                        double w = exp(-(fx*fx + fy*fy) / (2.0 * sigma * sigma)) / (2.0 * 3.14 * sigma * sigma);
+                        mask[k*size+l] = image.at<uchar>(i+l, j+k);
+                        sum = sum + w*mask[k*size+l] ;
+                    }
+                }
+
+                result->at<uchar>(i+offset, j+offset) = sum;
+            }
+        }
+    }
+
+}
+
 Mat create_spectrum(Mat image){
 
     Mat padded;                            //expand input image to optimal size
@@ -154,10 +194,87 @@ Mat create_spectrum(Mat image){
     normalize(magI, magI, 0, 1, CV_MINMAX); // Transform the matrix with float values into a
     // viewable image form (float between values 0 and 1).
 
-    // imshow("spectrum magnitude", magI);
+    //imshow("spectrum magnitude", magI);
     // waitKey();
-//return magI;
-    return filter_by_radius(magI,4.0);
+
+    // cv::Mat finalImage = filter_by_radius(magI,4.0);
+
+    /*  idft(complexI, complexI);
+
+    // split into planes and extract plane 0 as output image
+
+    split(complexI, planes);
+    normalize(planes[0], finalImage, 0, 1, CV_MINMAX);
+
+    // do the same with the filter image
+
+   // split(filter, planes);
+   // normalize(planes[0], filterOutput, 0, 1, CV_MINMAX);
+
+  // ***
+
+  // display image in window
+
+
+*/
+
+    int order = 1;
+    Mat imgOutput = complexI.clone();
+
+ //   Mat filter = magI.clone();
+    //create_butterworth_lowpass_filter(filter, radius, order);
+
+   //imshow("complex", complexI);
+  //  //imshow("mag", magI);
+   // Mat test = filter_by_radius(filter, 2);
+   /*
+    //imshow("lowPassName", test);
+    Mat complexImg = test;
+
+    //shiftDFT(complexImg);
+    // mulSpectrums(complexImg, test, complexImg, 0);
+    //shiftDFT(complexImg);
+    idft(complexImg, complexImg);
+
+    // split into planes and extract plane 0 as output image
+
+    split(complexImg, planes);
+    normalize(planes[0], imgOutput, 0, 1, CV_MINMAX);
+
+    // do the same with the filter image
+
+    //split(filter, planes);
+    //normalize(planes[0], filterOutput, 0, 1, CV_MINMAX);
+
+    // ***
+
+    // display image in window
+
+
+    imshow("lowPassName", imgOutput);
+
+*/
+
+    // Go float
+    cv::Mat fImage;
+    image.convertTo(fImage, CV_32F);
+
+    // FFT
+    std::cout << "Direct transform...\n";
+    cv::Mat fourierTransform;
+    cv::dft(fImage, fourierTransform, cv::DFT_SCALE|cv::DFT_COMPLEX_OUTPUT);
+//fourierTransform=    filter_by_radius(fourierTransform,17);
+
+    std::cout << "Inverse transform...\n";
+    cv::Mat inverseTransform;
+   // idft(fourierTransform,inverseTransform,DFT_REAL_OUTPUT);
+    cv::dft(complexI, inverseTransform, cv::DFT_INVERSE|cv::DFT_REAL_OUTPUT|cv::DFT_SCALE);
+    imshow("inverz", inverseTransform);
+    // Back to 8-bits
+    cv::Mat finalImage;
+    inverseTransform.convertTo(finalImage, CV_32F);
+
+    return inverseTransform;
 }
 
 Mat filter_by_radius(Mat spectrum, double radius){
@@ -165,33 +282,70 @@ Mat filter_by_radius(Mat spectrum, double radius){
     Size size_img = spectrum.size();
     int width = size_img.width;
     int height = size_img.height;
-    Mat lp_filtered = Mat(height, width, CV_8UC1);
+    Mat lp_filtered = spectrum.clone();
+    cout << width << " " << height;
 
-    for (int i = 0; i<height; i++){
-        for(int j = 0; i< width; j++){
-            double dst = sqrt(i*i + j*j);
-            if (dst <= radius) {
-                lp_filtered.at<int>(i, j) = 1;
-            }
-            else {
-                lp_filtered.at<int>(i, j) = 0;
+    Point centre = Point(spectrum.rows / 2, spectrum.cols / 2);
+    double radius2;
+
+    for (int i = 0; i<width; i++){
+        for(int j = 0; j< height; j++){
+
+
+            radius2 = (double) sqrt(pow((i - centre.x), 2.0) + pow((double) (j - centre.y), 2.0));
+            if (radius2<radius){
+          //  lp_filtered.at<float>(i, j) = (float)
+            //        ( 1 / (1 + pow((double) (radius2 /  radius), (double) (2 * 3))));
+            cout << radius2 << " ";
+lp_filtered.at<float>(i, j) = lp_filtered.at<float>(i, j)*0;
             }
         }
+        cout << endl;
+
     }
 
-  /*  Mat inverseTransform;
-    dft(lp_filtered, inverseTransform, cv::DFT_INVERSE|cv::DFT_REAL_OUTPUT);
+    Mat res = spectrum.mul(lp_filtered);
+   // imshow("res", res);
+/*
+    std::cout << "Inverse transform...\n";
+    cv::Mat inverseTransform;
+    cv::dft(spectrum, inverseTransform, cv::DFT_INVERSE|cv::DFT_REAL_OUTPUT);
 
     // Back to 8-bits
-    Mat finalImage;
+    cv::Mat finalImage;
     inverseTransform.convertTo(finalImage, CV_8U);
-    return finalImage;*/
-    return lp_filtered;
+   imshow("filter", finalImage);*/
+     return lp_filtered;
 }
 
-void Filter::low_pass(cv::Mat image, int size, cv::Mat* result){
+
+void Filter::low_pass(cv::Mat image, int size, cv::Mat* result, int radius){
     //result = &create_spectrum(image);
-    imshow("spectrum magnitude", create_spectrum(image));
+
+
+    // Go float
+    cv::Mat fImage;
+    image.convertTo(fImage, CV_32F);
+
+    // FFT
+    std::cout << "Direct transform...\n";
+    cv::Mat fourierTransform;
+    cv::dft(fImage, fourierTransform, cv::DFT_SCALE|cv::DFT_COMPLEX_OUTPUT);
+
+    // Some processing
+    //doSomethingWithTheSpectrum();
+    cv::Mat filtered = filter_by_radius(fourierTransform,radius);
+    // IFFT
+    std::cout << "Inverse transform...\n";
+    cv::Mat inverseTransform;
+    cv::dft(filtered, inverseTransform, cv::DFT_INVERSE|cv::DFT_REAL_OUTPUT);
+
+    // Back to 8-bits
+    cv::Mat finalImage;
+    inverseTransform.convertTo(finalImage, CV_8U);
+
+    imshow("filter", finalImage);
+    //imshow("spectrum magnitude", create_spectrum(image));
 }
 
 Mat Filter::tresholding(Mat base, int tresh){
