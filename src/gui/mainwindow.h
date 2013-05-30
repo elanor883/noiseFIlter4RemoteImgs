@@ -35,6 +35,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+
     double scaleFactor;
     int kernelSize;
     int kernelType;
