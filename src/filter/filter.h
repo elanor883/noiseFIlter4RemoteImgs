@@ -14,10 +14,11 @@ public:
     static void median(cv::Mat input, int size, cv::Mat* result);
     static void avarage(cv::Mat image, int size, cv::Mat* result);
     static void low_pass(cv::Mat image, int size, cv::Mat *result, int radius);
-static void gauss_filter(cv::Mat image, int size, cv::Mat *result, int sigma);
-    //static void tokomkivan(cv::Mat image, int size, cv::Mat *result);
+    static void high_pass(cv::Mat image, int size, cv::Mat *result, int radius);
+    static void gauss_filter(cv::Mat image, int size, cv::Mat *result, int sigma);
     static cv::Mat tresholding(cv::Mat base, int tresh);
-    static int otsu(cv::Mat base);
+    static int otsu(cv::Mat base, cv::Mat *result);
+
 };
 
 #endif // FILTER_H
