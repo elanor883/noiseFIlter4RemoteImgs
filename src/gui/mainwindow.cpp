@@ -35,8 +35,6 @@ MainWindow::MainWindow(QWidget *parent) :
     kernelSize = 0;
     kernelType = 0;
 
-    setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::Dialog);
-
     QAction *openFile = ui->actionOpen;
     QAction *quit = ui->actionQuit;
 
@@ -49,25 +47,16 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->applyFilterBtn, SIGNAL(clicked()), this, SLOT(applyFilter()));
     connect(quit, SIGNAL(triggered()), qApp, SLOT(quit()));
     connect(openFile, SIGNAL(triggered()), this, SLOT(open()));
-    connect(ui->zoomInBtn, SIGNAL(clicked()), this, SLOT(zoomIn()));
-    connect(ui->zoomOutBtn, SIGNAL(clicked()), this, SLOT(applyFilter()));
-
+    connect(ui->saveImgBtn, SIGNAL(clicked()), this, SLOT(saveImage()));
 }
 
-void MainWindow::handleSelectionChanged(int index){
-
-    QMessageBox* msg = new QMessageBox();
-    msg->setWindowTitle("Hello !");
-    msg->setText("Selected Index is :"+QString::number(index));
-    msg->show();
-}
 void MainWindow::applyFilter()
 {
 
     Size size_img = img.size();
     int width = size_img.width;
     int height = size_img.height;
-    Mat* output = new Mat(height, width, CV_8UC1);
+    output = new Mat(height, width, CV_8UC1);
 
 
     cout << "applyFilter, combobox text: " << ui->comboFilter->currentIndex() << "\n";
@@ -111,9 +100,22 @@ void MainWindow::applyFilter()
         }
 
 
-        break;
+
     }
         break;
+        /* case 3:
+    {
+        low_pass_dialog* lp = new low_pass_dialog(this);
+        lp->exec();
+        if(lp->ok_pushed() == 1)
+        {
+            Filter::high_pass(img,kernelSize, output, lp->get_parameter());
+        }
+
+
+
+    }
+        break;*/
     case 3:
     {
         gauss_parameter* gp = new gauss_parameter(this);
@@ -124,8 +126,12 @@ void MainWindow::applyFilter()
         }
 
 
-        break;
+
     }
+        break;
+    case 4:  *output = Filter::tresholding(img,Filter::otsu(img, output));
+        break;
+
     default: Filter::median(img,kernelSize, output);
         break;
     }
@@ -138,8 +144,6 @@ void MainWindow::display(Mat* img){
     IplImage im = *img;
     cout<< "display start" ;
     QImage result = IplImage2QImage(&im);
-    cout<< "display start" ;
-    //imshow("Otsu" , res);
     ui->imageLabelOut->setScaledContents(true);
     ui->imageLabelOut->setPixmap(QPixmap::fromImage(result));
     ui->imageLabelOut->setMargin(40);
@@ -160,14 +164,6 @@ void MainWindow::open(){
         ui->imageLabelIn->setMouseTracking(true);
         ui->imageLabelIn->setPixmap(QPixmap::fromImage(image));
         ui->imageLabelIn->setMargin(40);
-        scaleFactor = 1.0;
-
-        //printAct->setEnabled(true);
-        // fitToWindowAct->setEnabled(true);
-        //updateActions();
-
-        //if (!fitToWindowAct->isChecked())
-        //  imageLabelIn->adjustSize();
 
         string fname = fileName.toUtf8().constData();
         img = imread(fname, CV_LOAD_IMAGE_GRAYSCALE);
@@ -176,60 +172,20 @@ void MainWindow::open(){
             //return -1;
         }
 
-
-
-        /*      // imshow("Original", img);
-        // imshow("Otsu" , tresholding(img,otsu(img)));
-        Mat res = tresholding(img,otsu(img));
-        //QImage result = Mat2QImage(res);
-        IplImage im = res;
-        QImage result = IplImage2QImage(&im);
-
-        //imshow("Otsu" , res);
-        ui->imageLabelOut->setScaledContents(true);
-        ui->imageLabelOut->setPixmap(QPixmap::fromImage(result));
-        ui->imageLabelOut->setMargin(40);
-        scaleFactor = 1.0;
-
-        //return 0;*/
-
     }
 }
 
-void MainWindow::zoomIn()
-{
-    cout << "scaleeee" ;
-    //scaleImage(1.25);
+void MainWindow::saveImage(){
+    QString fileName = QFileDialog::getSaveFileName (this,
+                                                     tr("Save File"), "/home/elanor/");
+    const char* fn = fileName.toUtf8().constData();
+    cout << fn;
+    Mat tmp = *output;
+    imwrite( fn, tmp );
 
 }
 
-void MainWindow::zoomOut()
-{
-    cout << "scaleeee" ;
-    //scaleImage(0.8);
-}
 
-void MainWindow::scaleImage(double factor)
-{
-    Q_ASSERT(imageLabelIn->pixmap());
-    scaleFactor *= factor;
-    ui->imageLabelIn->resize(scaleFactor * ui->imageLabelIn->pixmap()->size());
-
-    ui->imageLabelIn->scroll(60,60,QRect(100,100,600,600));
-    ui->imageLabelIn->pixmap()->scaled(400,400,Qt::IgnoreAspectRatio,Qt::FastTransformation);
-    ui->imageLabelIn->setScaledContents(true);
-    adjustScrollBar(ui->scrollAreaIn->horizontalScrollBar(), 400);
-    adjustScrollBar(ui->scrollAreaOut->verticalScrollBar(), 400);
-
-    //zoomInAct->setEnabled(scaleFactor < 3.0);
-    //zoomOutAct->setEnabled(scaleFactor > 0.333);
-}
-
-void MainWindow::adjustScrollBar(QScrollBar *scrollBar, double factor)
-{
-    scrollBar->setValue(int(factor * scrollBar->value()
-                            + ((factor - 1) * scrollBar->pageStep()/2)));
-}
 
 MainWindow::~MainWindow()
 {
@@ -237,18 +193,6 @@ MainWindow::~MainWindow()
 }
 
 
-
-QImage Mat2QImage(const cv::Mat3b &src) {
-    QImage dest(src.cols, src.rows, QImage::Format_RGB888);
-    for (int y = 0; y < src.rows; ++y) {
-        const cv::Vec3b *srcrow = src[y];
-        QRgb *destrow = (QRgb*)dest.scanLine(y);
-        for (int x = 0; x < src.cols; ++x) {
-            destrow[x] = qRgba(srcrow[x][2], srcrow[x][1], srcrow[x][0], 255);
-        }
-    }
-    return dest;
-}
 
 static QImage IplImage2QImage(const IplImage *iplImage)
 {
